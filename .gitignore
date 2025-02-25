@@ -1,0 +1,15 @@
+# partly taken from: https://github.com/renpy/renpy/blob/d2755faa5cf7f156a088d956cc53d0f249fec2d6/.gitignore#L23-L37
+# Compiled Ren'Py files.
+*.rpyc
+*.rpyb
+*.rpymc
+
+# Ren'Py log files.
+log.txt
+errors.txt
+traceback.txt
+lint.txt
+
+# Created directories.
+game/saves/
+game/cache/
