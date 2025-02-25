@@ -96,6 +96,8 @@ style frame:
 ## https://www.renpy.org/doc/html/screen_special.html#say
 
 screen say(who, what):
+    # NOTE: installation step 1 - create the input data
+    default who_input_data = create_who_input_data()
 
     window:
         id "window"
@@ -105,7 +107,13 @@ screen say(who, what):
             window:
                 id "namebox"
                 style "namebox"
-                text who id "who"
+
+                # NOTE: installation step 2 - replace the text with id "who" with
+                # the input displayable
+                use who_input_button(
+                    who_input_data,
+                    input_selected_color="#f00",
+                )
 
         text what id "what"
 
@@ -114,6 +122,11 @@ screen say(who, what):
     ## phone variant - there's no room.
     if not renpy.variant("small"):
         add SideImage() xalign 0.0 yalign 1.0
+
+    # NOTE: installation step 3 (optional) - if not added, the player can still
+    # turn off the input by clicking the character's name again.
+    # if added, provide the key that when pressed will discard the changes
+    use who_input_key(who_input_data, "K_ESCAPE")
 
 
 ## Make the namebox available for styling through the Character object.

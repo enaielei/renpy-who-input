@@ -1,9 +1,19 @@
-﻿# The script of the game goes in this file.
+﻿# NOTE: installation step 4 - in order for the ReloadWhoInput's action to work,
+# call _who_input_after_load in your after_load label
+label after_load:
+    call _who_input_after_load
+    return
+
+# The script of the game goes in this file.
 
 # Declare characters used by this game. The color argument colorizes the
 # name of the character.
 
-define e = Character("Eileen")
+# NOTE: usage step 1 - create a default variable where the edited name will be stored
+default e = "Eileen"
+# NOTE: usage step 2 - use that variable name as the character's name and set the
+# character to be dynamic
+define character.e = Character("e", dynamic=True)
 
 
 # The game starts here.
@@ -24,10 +34,7 @@ label start:
 
     # These display lines of dialogue.
 
-    e "You've created a new Ren'Py game."
-
-    e "Once you add a story, pictures, and music, you can release it to the world!"
-
-    # This ends the game.
+    e "You can edit my name by clicking it.\nPress Enter to accept changes. Press ESC to discard changes.\nRight now my name is \"[e]\"."
+    e "See? My new name \"[e]\" persisted even on this new line!\nYou can edit it anytime."
 
     return
