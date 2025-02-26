@@ -1,16 +1,28 @@
+init offset = -1
+
 # NOTE: setting 1 - the name to use for the save to be created for reloading
 define who_input_save = "_who_input"
 # NOTE: setting 2 - whether to retain the updated name upon save on the point where it was edited
 # if False, this will cause the updated name to be only saved starting the next
 # say statement/dialogue and forward
 define who_input_retained = True
+define who_input_button_id_prefix = "who_button"
 
-define _who_input_data_var_name = "var"
 define _who_input_data_val_name = "val"
 define _who_input_data_old_name = "old"
+
+init offset = 0
+
 default _who_input_on_reload = None
 
-init python:
+init -1 python:
+    class WhoInputCharacter(ADVCharacter):
+        """A `Character` that allows storing an `InputValue` as its name."""
+
+        def __init__(self, input_value, *args, **kwargs):
+            self.input_value = input_value
+            super().__init__(name=self.input_value.get_text, dynamic=True, *args, **kwargs)
+
     def is_active_input(input_value):
         """Tell if an editable `InputValue` is currently active."""
         # https://github.com/renpy/renpy/blob/ec79a20c2ca0762c87d4aa2a049009e80a70de95/renpy/common/00action_file.rpy#L717-L719
@@ -31,11 +43,12 @@ init python:
 
     def create_who_input_data():
         """Create the data needed for `who_input`."""
-        return {
-            _who_input_data_var_name: (var := (renpy.scry().who or narrator).name),
-            _who_input_data_val_name: (val := VariableInputValue(var, default=False, returnable=False)),
-            _who_input_data_old_name: val.get_text(),
-        }
+        char = renpy.scry().who or narrator
+        if isinstance(char, WhoInputCharacter):
+            return {
+                _who_input_data_val_name: char.input_value,
+                _who_input_data_old_name: char.name(),
+            }
 
     def _retain_who_input(statement):
         """Use `renpy.retain_after_load` before `say` statement's execution."""
@@ -45,8 +58,10 @@ init python:
     if who_input_retained:
         config.statement_callbacks.append(_retain_who_input)
 
+    config.character_id_prefixes.append(who_input_button_id_prefix)
+
     def ReloadWhoInput(action=None):
-        """Convenient Action for `reload_who_input`."""
+        """Convenient `Action` for `reload_who_input`."""
         return Function(reload_who_input, action)
 
 label _who_input_after_load:
@@ -56,6 +71,8 @@ label _who_input_after_load:
             renpy.run(_who_input_on_reload)
             _who_input_on_reload = None
     return
+
+style who_input_button is namebox
 
 screen who_input_button(data, **properties):
     python:
@@ -75,8 +92,9 @@ screen who_input_button(data, **properties):
             ))
         )
 
-    button:
+    button id "namebox":
         action who_val.Toggle()
+        style "who_input_button"
         properties button_properties
 
         who_input id "who":

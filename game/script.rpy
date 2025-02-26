@@ -11,9 +11,20 @@ label after_load:
 
 # NOTE: usage step 1 - create a default variable where the edited name will be stored
 default e = "Eileen"
-# NOTE: usage step 2 - use that variable name as the character's name and set the
-# character to be dynamic
-define character.e = Character("e", dynamic=True)
+# NOTE: usage step 2 - use that variable name in an InputValue and pass that to
+# the WhoInputCharacter instance
+define character.e = WhoInputCharacter(VariableInputValue("e", False))
+
+define j = Character("Jake")
+
+default h = "Hailee"
+define character.h = WhoInputCharacter(
+    VariableInputValue("h", False),
+    # namebox style properties override the button style properties
+    namebox_background="#0f01",
+    # who style properties override the input style properties
+    who_selected_color="#ffa600",
+)
 
 
 # The game starts here.
@@ -36,5 +47,9 @@ label start:
 
     e "You can edit my name by clicking it.\nPress Enter to accept changes. Press ESC to discard changes.\nRight now my name is \"[e]\"."
     e "See? My new name \"[e]\" persisted even on this new line!\nYou can edit it anytime."
+
+    j "On the other hand, my name is [j] and it's not editable. Just a normal one."
+
+    h "I'm another character with an editable name with just overriden styles."
 
     return

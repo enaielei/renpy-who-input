@@ -104,16 +104,22 @@ screen say(who, what):
 
         if who is not None:
 
-            window:
-                id "namebox"
-                style "namebox"
-
-                # NOTE: installation step 2 - replace the text with id "who" with
-                # the input displayable
+            # NOTE: installation step 2 - replace namebox and text with
+            # the button and input displayables
+            if who_input_data:
                 use who_input_button(
                     who_input_data,
+                    # properties are passed to the button
+                    background="#fff1",
+                    # input properties are passed to the input
                     input_selected_color="#f00",
                 )
+            else:
+                window:
+                    id "namebox"
+                    style "namebox"
+
+                    text who id "who"
 
         text what id "what"
 
@@ -126,7 +132,8 @@ screen say(who, what):
     # NOTE: installation step 3 (optional) - if not added, the player can still
     # turn off the input by clicking the character's name again.
     # if added, provide the key that when pressed will discard the changes
-    use who_input_key(who_input_data, "K_ESCAPE")
+    if who_input_data:
+        use who_input_key(who_input_data, "K_ESCAPE")
 
 
 ## Make the namebox available for styling through the Character object.
