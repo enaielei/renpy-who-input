@@ -83,7 +83,7 @@ init -1 python:
 
     def _combine_say_arguments_callback(*callbacks):
         """Combine multiple `config.say_arguments_callback` functions."""
-        def combined(who, interact, *args, **kwargs):
+        def combined(who, interact=True, *args, **kwargs):
             for callback in callbacks:
                 args, kwargs = callback(who, interact, *args, **kwargs)
                 interact = kwargs.pop("interact", True)
