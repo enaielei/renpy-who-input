@@ -95,10 +95,8 @@ style frame:
 ##
 ## https://www.renpy.org/doc/html/screen_special.html#say
 
-screen say(who, what):
-    # NOTE: installation step 1 - create the input data
-    default who_input_data = create_who_input_data()
-
+# NOTE: installation step 1 - create the input data
+screen say(who, what, who_input_data=None):
     window:
         id "window"
 
@@ -113,6 +111,32 @@ screen say(who, what):
                     background="#fff1",
                     # input properties are passed to the input
                     input_selected_color="#f00",
+                    input_action=If(
+                        # if the input is empty, discard the changes and notify the player
+                        not who_input_data.new_text.strip(),
+                        [
+                            who_input_data.Discard(),
+                            who_input_data.input_value.Disable(),
+                            Notify(_("Entered name is empty, reverted back to the original name.")),
+                        ],
+                        If(
+                            # otherwise, if the input was changed, update and reload the input and notify the player
+                            who_input_data.old_text != who_input_data.new_text,
+                            [
+                                who_input_data.Update(),
+                                who_input_data.input_value.Disable(),
+                                # without a reload, a dialogue containing the character's name will not be updated
+                                ReloadWhoInput(
+                                    Notify(_('Name was changed from "{}" to "{}".').format(
+                                        who_input_data.old_text,
+                                        who_input_data.new_text,
+                                    ))
+                                ),
+                            ],
+                            # otherwise, just disable the input
+                            who_input_data.input_value.Disable(),
+                        ),
+                    ),
                 )
             else:
                 window:
@@ -131,9 +155,9 @@ screen say(who, what):
 
     # NOTE: installation step 3 (optional) - if not added, the player can still
     # turn off the input by clicking the character's name again.
-    # if added, provide the key that when pressed will discard the changes
+    # if added, provide the key that when triggered will discard the changes
     if who_input_data:
-        use who_input_key(who_input_data, "K_ESCAPE")
+        use who_input_key(who_input_data, ["game_menu"])
 
 
 ## Make the namebox available for styling through the Character object.

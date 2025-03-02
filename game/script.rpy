@@ -52,4 +52,6 @@ label start:
 
     h "I'm another character with an editable name with just overriden styles."
 
+    "And I'm the narrator. I don't have a name."
+
     return

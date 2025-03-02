@@ -2,14 +2,8 @@ init offset = -1
 
 # NOTE: setting 1 - the name to use for the save to be created for reloading
 define who_input_save = "_who_input"
-# NOTE: setting 2 - whether to retain the updated name upon save on the point where it was edited
-# if False, this will cause the updated name to be only saved starting the next
-# say statement/dialogue and forward
-define who_input_retained = True
-define who_input_button_id_prefix = "who_button"
-
-define _who_input_data_val_name = "val"
-define _who_input_data_old_name = "old"
+# NOTE: setting 2 - name of the argument in the say screen that will hold the input data
+define who_input_data_key = "who_input_data"
 
 init offset = 0
 
@@ -19,15 +13,53 @@ init -1 python:
     class WhoInputCharacter(ADVCharacter):
         """A `Character` that allows storing an `InputValue` as its name."""
 
-        def __init__(self, input_value, *args, **kwargs):
-            self.input_value = input_value
-            super().__init__(name=self.input_value.get_text, dynamic=True, *args, **kwargs)
+        def __init__(self, input_value, kind=None, *args, **kwargs):
+            if input_value is renpy.character.NotSet and isinstance(kind, WhoInputCharacter):
+                self.input_value = kind.input_value
+            else:
+                self.input_value = input_value
+            self.input_value = self.input_value
+            super().__init__(name=self.input_value.get_text, kind=kind, dynamic=True, *args, **kwargs)
 
-    def is_active_input(input_value):
-        """Tell if an editable `InputValue` is currently active."""
-        # https://github.com/renpy/renpy/blob/ec79a20c2ca0762c87d4aa2a049009e80a70de95/renpy/common/00action_file.rpy#L717-L719
-        val, edi = renpy.get_editable_input_value()
-        return (val is input_value) and edi
+    class WhoInputData():
+        """The data for the `who_input` screen."""
+
+        def __init__(self, input_value):
+            self.input_value = input_value
+            self._old_text = self.input_value.get_text()
+
+        @property
+        def activated(self):
+            """Tell if the `InputValue` is currently active."""
+            # https://github.com/renpy/renpy/blob/ec79a20c2ca0762c87d4aa2a049009e80a70de95/renpy/common/00action_file.rpy#L717-L719
+            val, edi = renpy.get_editable_input_value()
+            return (val is self.input_value) and edi
+
+        @property
+        def new_text(self):
+            """Convenient property for getting the current text."""
+            return self.input_value.get_text()
+
+        @property
+        def old_text(self):
+            """Get the old text."""
+            return self._old_text
+
+        def update(self):
+            """Update the old text to the current text."""
+            self._old_text = self.new_text
+
+        def discard(self):
+            """Discard the current text and revert to the old text."""
+            self.input_value.set_text(self.old_text)
+
+        def Update(self):
+            """Convenient `Action` for `update`."""
+            return Function(self.update)
+
+        def Discard(self):
+            """Convenient `Action` for `discard`."""
+            return Function(self.discard)
 
     def reload_who_input(action=None):
         """Reload after `who_input` change.
@@ -41,84 +73,60 @@ init -1 python:
         renpy.save(who_input_save)
         renpy.load(who_input_save)
 
-    def create_who_input_data():
-        """Create the data needed for `who_input`."""
-        char = renpy.scry().who or narrator
-        if isinstance(char, WhoInputCharacter):
-            return {
-                _who_input_data_val_name: char.input_value,
-                _who_input_data_old_name: char.name(),
-            }
-
-    def _retain_who_input(statement):
-        """Use `renpy.retain_after_load` before `say` statement's execution."""
-        if statement == "say":
+    def _process_say_who_input(who, interact=True, *args, **kwargs):
+        """Create the necessary data for `who_input` and retain after load."""
+        kwargs["interact"] = interact
+        if isinstance(who, WhoInputCharacter):
+            kwargs[f"show_{who_input_data_key}"] = WhoInputData(who.input_value)
             renpy.retain_after_load()
+        return args, kwargs
 
-    if who_input_retained:
-        config.statement_callbacks.append(_retain_who_input)
+    def _combine_say_arguments_callback(*callbacks):
+        """Combine multiple `config.say_arguments_callback` functions."""
+        def combined(who, interact, *args, **kwargs):
+            for callback in callbacks:
+                args, kwargs = callback(who, interact, *args, **kwargs)
+                interact = kwargs.pop("interact", True)
+            kwargs["interact"] = interact
+            return args, kwargs
+        return combined
 
-    config.character_id_prefixes.append(who_input_button_id_prefix)
+    if config.say_arguments_callback is None:
+        config.say_arguments_callback = _process_say_who_input
+    else:
+        config.say_arguments_callback = _combine_say_arguments_callback(
+            config.say_arguments_callback,
+            _process_say_who_input,
+        )
 
     def ReloadWhoInput(action=None):
         """Convenient `Action` for `reload_who_input`."""
         return Function(reload_who_input, action)
 
 label _who_input_after_load:
-    if renpy.can_load(who_input_save) and _who_input_on_reload:
+    if renpy.can_load(who_input_save):
         python:
+            if _who_input_on_reload:
+                renpy.run(_who_input_on_reload)
+                _who_input_on_reload = None
             renpy.unlink_save(who_input_save)
-            renpy.run(_who_input_on_reload)
-            _who_input_on_reload = None
     return
 
 style who_input_button is namebox
 
 screen who_input_button(data, **properties):
     python:
-        # properties prefixed with input_ will be treated as input properties,
-        # otherwise as button properties
         input_properties, button_properties = renpy.split_properties(properties, "input_", "")
-        who_val, who_old = data[_who_input_data_val_name], data[_who_input_data_old_name]
-        who_new = who_val.get_text()
-
-        # NOTE: setting 3 - what action to execute if the player entered an emtpy text?
-        on_empty = Notify(_("Entered name is empty, reverted back to the original name."))
-        # NOTE: setting 4 - what action to execute after updating the name?
-        on_update = ReloadWhoInput(
-            Notify(_('Name was changed from "{}" to "{}".').format(
-                who_old,
-                who_new,
-            ))
-        )
 
     button id "namebox":
-        action who_val.Toggle()
-        style "who_input_button"
+        action data.input_value.Toggle()
+        style style.who_input_button
         properties button_properties
 
         who_input id "who":
-            value who_val
-            action If(
-                not who_new.strip(),
-                [
-                    Function(who_val.set_text, who_old),
-                    who_val.Disable(),
-                    on_empty,
-                ],
-                If(
-                    who_old != who_new,
-                    [
-                        SetDict(data, _who_input_data_old_name, who_new),
-                        who_val.Disable(),
-                        on_update,
-                    ],
-                    who_val.Disable(),
-                ),
-            )
+            value data.input_value
             properties input_properties
 
 screen who_input_key(data, key):
-    $ who_val, who_old = data[_who_input_data_val_name], data[_who_input_data_old_name]
-    if is_active_input(who_val):
-        key key action [Function(who_val.set_text, who_old), who_val.Disable()]
+    if data.activated:
+        key key action [data.Discard(), data.input_value.Disable()]
