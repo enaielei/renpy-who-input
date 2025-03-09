@@ -107,6 +107,8 @@ screen say(who, what, who_input_data=None):
             if who_input_data:
                 use who_input_button(
                     who_input_data,
+                    # optionally, pass the who for who_prefix/who_suffix support
+                    who,
                     # properties are passed to the button
                     background="#fff1",
                     # input properties are passed to the input
@@ -126,6 +128,7 @@ screen say(who, what, who_input_data=None):
                                 who_input_data.Update(),
                                 who_input_data.input_value.Disable(),
                                 # without a reload, a dialogue containing the character's name will not be updated
+                                # if the who is passed for who_prefix/who_suffix support, a reload is needed as well
                                 ReloadWhoInput(
                                     Notify(_('Name was changed from "{}" to "{}".').format(
                                         who_input_data.old_text,
