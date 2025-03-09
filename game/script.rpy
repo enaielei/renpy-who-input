@@ -26,6 +26,12 @@ define character.h = WhoInputCharacter(
     who_selected_color="#ffa600",
 )
 
+default m = "Mike"
+define character.m = WhoInputCharacter(
+    VariableInputValue("m", False),
+    who_prefix="*",
+    who_suffix="*",
+)
 
 # The game starts here.
 
@@ -51,6 +57,8 @@ label start:
     j "On the other hand, my name is [j] and it's not editable. Just a normal one."
 
     h "I'm another character with an editable name with just overriden styles."
+
+    m "I'm [m], a character with a name that is editable and has a prefix and a suffix."
 
     "And I'm the narrator. I don't have a name."
 

@@ -114,7 +114,9 @@ label _who_input_after_load:
 
 style who_input_button is namebox
 
-screen who_input_button(data, **properties):
+screen who_input_button(data, who=None, **properties):
+    default who_input_value = LocalVariableInputValue("who", False) if who is not None else None
+
     python:
         input_properties, button_properties = renpy.split_properties(properties, "input_", "")
 
@@ -124,7 +126,10 @@ screen who_input_button(data, **properties):
         properties button_properties
 
         who_input id "who":
-            value data.input_value
+            if who_input_value is None or data.activated:
+                value data.input_value
+            else:
+                value who_input_value
             properties input_properties
 
 screen who_input_key(data, key):
