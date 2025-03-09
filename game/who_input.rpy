@@ -24,8 +24,10 @@ init -1 python:
     class WhoInputData():
         """The data for the `who_input` screen."""
 
-        def __init__(self, input_value):
+        def __init__(self, input_value, prefix="", suffix=""):
             self.input_value = input_value
+            self.prefix = prefix
+            self.suffix = suffix
             self._old_text = self.input_value.get_text()
 
         @property
@@ -77,7 +79,9 @@ init -1 python:
         """Create the necessary data for `who_input` and retain after load."""
         kwargs["interact"] = interact
         if isinstance(who, WhoInputCharacter):
-            kwargs[f"show_{who_input_data_key}"] = WhoInputData(who.input_value)
+            kwargs[f"show_{who_input_data_key}"] = WhoInputData(
+                who.input_value, who.who_prefix, who.who_suffix
+            )
             renpy.retain_after_load()
         return args, kwargs
 
@@ -114,9 +118,7 @@ label _who_input_after_load:
 
 style who_input_button is namebox
 
-screen who_input_button(data, who=None, **properties):
-    default who_input_value = LocalVariableInputValue("who", False) if who is not None else None
-
+screen who_input_button(data, **properties):
     python:
         input_properties, button_properties = renpy.split_properties(properties, "input_", "")
 
@@ -126,10 +128,9 @@ screen who_input_button(data, who=None, **properties):
         properties button_properties
 
         who_input id "who":
-            if who_input_value is None or data.activated:
-                value data.input_value
-            else:
-                value who_input_value
+            value data.input_value
+            prefix data.prefix
+            suffix data.suffix
             properties input_properties
 
 screen who_input_key(data, key):

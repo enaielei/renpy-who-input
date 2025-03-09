@@ -29,8 +29,8 @@ define character.h = WhoInputCharacter(
 default m = "Mike"
 define character.m = WhoInputCharacter(
     VariableInputValue("m", False),
-    who_prefix="*",
-    who_suffix="*",
+    who_prefix="{size=-20}*{/size}",
+    who_suffix="{size=-20}*{/size}",
 )
 
 # The game starts here.
