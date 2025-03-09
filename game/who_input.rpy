@@ -25,10 +25,15 @@ init -1 python:
         """The data for the `who_input` screen."""
 
         def __init__(self, input_value, prefix="", suffix=""):
-            self.input_value = input_value
-            self.prefix = prefix
-            self.suffix = suffix
+            self._input_value = input_value
+            self._prefix = prefix
+            self._suffix = suffix
             self._old_text = self.input_value.get_text()
+
+        @property
+        def input_value(self):
+            """Get the `InputValue`."""
+            return self._input_value
 
         @property
         def activated(self):
@@ -46,6 +51,16 @@ init -1 python:
         def old_text(self):
             """Get the old text."""
             return self._old_text
+
+        @property
+        def prefix(self):
+            """Get the prefix."""
+            return self._prefix
+
+        @property
+        def suffix(self):
+            """Get the suffix."""
+            return self._suffix
 
         def update(self):
             """Update the old text to the current text."""
@@ -129,8 +144,8 @@ screen who_input_button(data, **properties):
 
         who_input id "who":
             value data.input_value
-            prefix data.prefix
-            suffix data.suffix
+            prefix renpy.substitute(data.prefix)
+            suffix renpy.substitute(data.suffix)
             properties input_properties
 
 screen who_input_key(data, key):
